@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Extensions.Configuration" Version="0.0.4" />
+    <PackageReference Include="FluentValidation" Version="11.8.1" />
+    <PackageReference Include="Hangfire.Core" Version="1.8.6" />
+    <PackageReference Include="Hangfire.Extensions.Configuration" Version="1.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Localization" Version="2.1.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.2.5" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" />
+    <PackageReference Include="Mnt.Microsoft.Exchange.WebServices.Data" Version="2.2.1.1" />
+    <PackageReference Include="System.Text.Json" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Localization\Localization.csproj" />
+  </ItemGroup>
+
+</Project>

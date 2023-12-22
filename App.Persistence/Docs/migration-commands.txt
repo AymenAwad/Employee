@@ -1,0 +1,5 @@
+﻿PM> add-migration initaldb -Context ApplicationDbContext -o Migrations
+PM> add-migration initalIdentity -Context LogsDbContext -o Migrations/Logs
+ 
+PM> update-database -Context ApplicationDbContext 
+PM> update-database -Context LogsDbContext
