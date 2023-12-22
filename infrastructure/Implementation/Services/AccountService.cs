@@ -35,6 +35,8 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using Application.Features.IdentityFeatures.ApplicationPermissionFeatures.Commands;
+using Tawteen.Application.Features.IdentityFeatures.ApplicationRolePermissionFeatures.Commands;
 
 namespace Infrastructure.Implementation.Services
 {
@@ -84,11 +86,7 @@ namespace Infrastructure.Implementation.Services
             {
                 throw new ApiException($"Invalid Credentials for '{request.Email}'.");
             }
-            if (!user.EmailConfirmed)
-            {
-                throw new ApiException($"Account Not Confirmed for '{request.Email}'.");
-            }
-
+           
             JwtSecurityToken jwtSecurityToken = await GenerateJWToken(user);
 
             List<RolesAndPermissionsOrganizationUserDto> rolesAndPermissionsOrganizations = new List<RolesAndPermissionsOrganizationUserDto>();
@@ -103,7 +101,7 @@ namespace Infrastructure.Implementation.Services
             {
                 employee = _context.Employees.FirstOrDefault(x => x.ApplicationUserId == user.Id);
 
-                if (employee.Id > 0)
+                if (employee != null)
                 {
                     response.ApplicationId = employee.Id;
                     response.ApplicationName = employee.Name;
@@ -150,18 +148,6 @@ namespace Infrastructure.Implementation.Services
 
                     var verificationUri = await SendVerificationEmail(user, origin);
 
-                    if (await _featureManager.IsEnabledAsync(nameof(FeatureManagement.EnableEmailService)))
-                    {
-                        var emailRequest = new EmailRequest()
-                        {
-                            From = "RowadAlnaql@tga.gov.sa",
-                            To = user.Email,
-                            Body = $"Please confirm your account by visiting this URL {verificationUri}",
-                            Subject = "Confirm Registration"
-                        };
-                        await _emailService.SendAsync(emailRequest);
-
-                    }
                     return new Response<string>(user.Id, message: $"User Registered. Please confirm your account by visiting this URL {verificationUri}");
                 }
                 else
@@ -278,7 +264,7 @@ namespace Infrastructure.Implementation.Services
 
                     if (int.Parse(request.RegisterRequest.UserTypeId) == (int)UserTypeEnum.Employee)
                     {
-                        Response<int> organization = await _mediator.Send(new CreateEmployeeCommand()
+                        Response<int> emmployee = await _mediator.Send(new CreateEmployeeCommand()
                         {
                             Agency = request.CreateEmployee.Agency,
                             Name =  request.CreateEmployee.EmployeeName,
@@ -290,14 +276,14 @@ namespace Infrastructure.Implementation.Services
                             ApplicationUserId = user.Id,
                         });
 
-                        if (organization.Data > 0)
+                        if (emmployee.Data > 0)
                         {
                             #region Role
                             Response<int> userApplicationRole = await _mediator.Send(new CreateApplicationRoleCommand()
                             {
-                                RoleId = "7642c6c6-69d8-4ce3-9e8e-af5300a116cb",
+                                RoleId = "7642c6c6-69d8-4ce3-9e8e-af5300a116cb", // AcademyDelegate role
                                 ApplicationTypeId = (int)UserTypeEnum.Employee,
-                                ApplicationId = organization.Data,
+                                ApplicationId = emmployee.Data,
                             });
 
                             Response<int> userApplicationRolex = await _mediator.Send(new CreateUserApplicationRoleCommand()
@@ -307,11 +293,78 @@ namespace Infrastructure.Implementation.Services
                             });
                             #endregion
 
+                            #region Permission
+                            Response<int> applicationPermissionAdd = await _mediator.Send(new CreateApplicationPermissionCommand()
+                            {
+                                PermissionId = (int)PermissionTypeEnum.Add,
+                                ApplicationTypeId = (int)ApplicationTypeEnum.Employee,
+                                ApplicationId = emmployee.Data,
+                            });
+                            Response<int> applicationPermissionUpdate = await _mediator.Send(new CreateApplicationPermissionCommand()
+                            {
+                                PermissionId = (int)PermissionTypeEnum.Update,
+                                ApplicationTypeId = (int)ApplicationTypeEnum.Employee,
+                                ApplicationId = emmployee.Data,
+                            });
+                            Response<int> applicationPermissionDelete = await _mediator.Send(new CreateApplicationPermissionCommand()
+                            {
+                                PermissionId = (int)PermissionTypeEnum.Delete,
+                                ApplicationTypeId = (int)ApplicationTypeEnum.Employee,
+                                ApplicationId = emmployee.Data,
+                            });
+                            Response<int> applicationPermissionView = await _mediator.Send(new CreateApplicationPermissionCommand()
+                            {
+                                PermissionId = (int)PermissionTypeEnum.View,
+                                ApplicationTypeId = (int)ApplicationTypeEnum.Employee,
+                                ApplicationId = emmployee.Data,
+                            });
+
+                            ////=============
+
+                            await _mediator.Send(new CreateApplicationRolePermissionCommand()
+                            {
+                                ApplicationPermissionsId = applicationPermissionAdd.Data,
+                                ApplicationRoleId = userApplicationRole.Data,
+                            });
+                            await _mediator.Send(new CreateApplicationRolePermissionCommand()
+                            {
+                                ApplicationPermissionsId = applicationPermissionUpdate.Data,
+                                ApplicationRoleId = userApplicationRole.Data,
+                            });
+                            await _mediator.Send(new CreateApplicationRolePermissionCommand()
+                            {
+                                ApplicationPermissionsId = applicationPermissionDelete.Data,
+                                ApplicationRoleId = userApplicationRole.Data,
+                            });
+                            await _mediator.Send(new CreateApplicationRolePermissionCommand()
+                            {
+                                ApplicationPermissionsId = applicationPermissionAdd.Data,
+                                ApplicationRoleId = userApplicationRole.Data,
+                            });
+                            #endregion
+
+                        }
+                        else
+                        {
+
                         }
                     }
+                    //=======================
+
+                    var verificationUri = await SendVerificationEmail(user, origin);
+
+     
+                    return new Response<string>(user.Id, message: $"User Registered. Please confirm your account by visiting this URL {verificationUri}");
+                }
+                else
+                {
+                    throw new ApiException($"{result.Errors.ToList()[0].Description}");
                 }
             }
-            return new Response<string>(user.Id, message: $"User Registered");
+            else
+            {
+                throw new ApiException($"Email {request.RegisterRequest.Email} is already registered.");
+            }
         }
         public async Task<Response<string>> ConfirmEmailAsync(string userId, string code)
         {

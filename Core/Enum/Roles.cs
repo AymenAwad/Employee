@@ -10,17 +10,13 @@ namespace Domain.Enum
     {
         // General
         Admin,
-        OrganizationDelegate,
-        AcademyDelegate,
-        Applicant,
-        EmployeeTGA
+        User,
+        Employee,
     }
     public static class Constants
     {
         public static readonly string Admin = Guid.NewGuid().ToString();
-        public static readonly string OrganizationDelegate = Guid.NewGuid().ToString();
-        public static readonly string AcademyDelegate = Guid.NewGuid().ToString();
-        public static readonly string Applicant = Guid.NewGuid().ToString();
-        public static readonly string EmployeeTGA = Guid.NewGuid().ToString();
+        public static readonly string User = Guid.NewGuid().ToString();
+        public static readonly string Employee = Guid.NewGuid().ToString();
     }
 }

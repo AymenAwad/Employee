@@ -9,6 +9,8 @@ namespace Domain.Enum
     public enum UserTypeEnum
     {
         Employee = 1,
+        Admin = 2,
+        User = 3
        
     }
 
